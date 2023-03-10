@@ -55,12 +55,58 @@ GROUP BY tconst);
 
 SELECT * FROM tconst_ratings_by_crew;
 
--- 5. 
+-- 5. DATA CLEANING
+ALTER TABLE nconst_nominees_list_446 DROP COLUMN MyUnknownColumn;
+ALTER TABLE actor_name_clean DROP COLUMN MyUnknownColumn;
+ALTER TABLE title_principle_crew DROP COLUMN `Unnamed: 0`;
+ALTER TABLE tconst_ratings_by_crew RENAME COLUMN `avg(nconst_rating)` TO rating_of_crew;
+ALTER TABLE nconst_ratings RENAME COLUMN nconst_rating TO rating_of_bestwork; 
+-- weighted average for their 4 best works, weighted with votes count
+
+SET SQL_SAFE_UPDATES = 0;
+UPDATE nconst_nominees_list_446 SET Nominees = 1; -- 446 names that had been nominated
+UPDATE oscars_nominees_imdb_list SET Nominees = 1; -- 3470 titles that had been nominated
+UPDATE oscars_winner_imdb_list SET Winner = 1; -- 709 titles that had won
+
+-- 6. CREATE TABLE THAT COUNT THE CREW WHO ARE NOMINATED IN A TITLE (i.e. IF A TITLE HAS A STAR-STUDDED CAST)
+CREATE TABLE tconst_with_nom_crew
+AS 
+(SELECT x.tconst, sum(x.nom_crew) as ct_nom_crew  -- count of nominated crew in a title
+FROM
+	(SELECT tconst, nl.Nominees as nom_crew
+	FROM  title_principle_crew tpc
+	LEFT JOIN nconst_nominees_list_446 nl
+	ON tpc.nconst = nl.nconst) x
+GROUP BY x.tconst);
+
+UPDATE tconst_with_nom_crew
+SET ct_nom_crew = 0
+WHERE ct_nom_crew IS NULL;
+SELECT * FROM tconst_with_nom_crew;
+
+-- 7. CREATE FINAL DATABASE:
+CREATE TABLE imdb_megadata
+AS
+	(SELECT  a.*,
+					tr.averageRating as ave_rating,
+					tr.numVotes as num_votes,
+					cc.ct_nom_crew as count_nom_crew,
+					tc.rating_of_crew as crew_star_meter,
+					ond.Nominees as nominated,
+					ow.Winner as won
+	FROM all_titles a
+	LEFT JOIN title_ratings tr ON a.tconst = tr.tconst
+	LEFT JOIN tconst_with_nom_crew cc ON a.tconst = cc.tconst
+	LEFT JOIN tconst_ratings_by_crew tc ON a.tconst = tc.tconst
+	LEFT JOIN oscars_winner_imdb_list ow ON a.tconst = ow.tconst
+	LEFT JOIN oscars_nominees_imdb_list ond ON a.tconst = ond.tconst);
+    
 
 
 
 
-	
+
+
 
 
 
