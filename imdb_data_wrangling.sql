@@ -101,6 +101,9 @@ AS
 	LEFT JOIN oscars_winner_imdb_list ow ON a.tconst = ow.tconst
 	LEFT JOIN oscars_nominees_imdb_list ond ON a.tconst = ond.tconst);
     
+    SELECT * FROM imdb_megadata;
+    
+    
 
 
 
