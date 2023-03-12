@@ -3,7 +3,7 @@ USE imdb;
 
 SELECT * FROM actor_name_clean;
 
--- 1. CREATE A TABLE THAT MAPs EACH INDIVIDUAL WITH THE MOVIES THEY ARE KNOWN FOR:
+-- 1. CREATE A TABLE THAT MAPS EACH INDIVIDUAL WITH THE MOVIES THEY ARE KNOWN FOR:
 CREATE TABLE nconst_known_for
 AS (
 SELECT
@@ -11,11 +11,9 @@ SELECT
 UNION ALL
 SELECT
   nconst, SUBSTRING_INDEX(SUBSTRING_INDEX(knownForTitles, ',' , 2), ',', -1) knownForTitle FROM actor_name_clean
-
 UNION ALL
 SELECT
   nconst, SUBSTRING_INDEX(SUBSTRING_INDEX(knownForTitles, ',' , 3), ',', -1) knownForTitle FROM actor_name_clean
-
 UNION ALL
 SELECT
   nconst, SUBSTRING_INDEX(SUBSTRING_INDEX(knownForTitles, ',' , 4), ',', -1) knownForTitle FROM actor_name_clean
@@ -68,7 +66,7 @@ UPDATE nconst_nominees_list_446 SET Nominees = 1; -- 446 names that had been nom
 UPDATE oscars_nominees_imdb_list SET Nominees = 1; -- 3470 titles that had been nominated
 UPDATE oscars_winner_imdb_list SET Winner = 1; -- 709 titles that had won
 
--- 6. CREATE TABLE THAT COUNT THE CREW WHO ARE NOMINATED IN A TITLE (i.e. IF A TITLE HAS A STAR-STUDDED CAST)
+-- 6. CREATE TABLE THAT COUNTS THE CREW WHO ARE NOMINATED IN A TITLE (i.e. IF A TITLE HAS A STAR-STUDDED CAST)
 CREATE TABLE tconst_with_nom_crew
 AS 
 (SELECT x.tconst, sum(x.nom_crew) as ct_nom_crew  -- count of nominated crew in a title
@@ -85,7 +83,7 @@ WHERE ct_nom_crew IS NULL;
 SELECT * FROM tconst_with_nom_crew;
 
 -- 7. CREATE FINAL DATABASE:
-CREATE TABLE imdb_megadata
+CREATE TABLE imdb_megadata_2
 AS
 	(SELECT  a.*,
 					tr.averageRating as ave_rating,
@@ -94,15 +92,73 @@ AS
 					tc.rating_of_crew as crew_star_meter,
 					ond.Nominees as nominated,
 					ow.Winner as won
-	FROM all_titles a
+	FROM all_titles_2 a
 	LEFT JOIN title_ratings tr ON a.tconst = tr.tconst
 	LEFT JOIN tconst_with_nom_crew cc ON a.tconst = cc.tconst
 	LEFT JOIN tconst_ratings_by_crew tc ON a.tconst = tc.tconst
 	LEFT JOIN oscars_winner_imdb_list ow ON a.tconst = ow.tconst
 	LEFT JOIN oscars_nominees_imdb_list ond ON a.tconst = ond.tconst);
     
-    SELECT * FROM imdb_megadata;
+    SELECT * FROM imdb_megadata_2;
+    SELECT * FROM all_titles;
     
+-- 8. CHECK DIRECTOR
+SELECT tconst, nconst, category
+FROM title_principle_crew
+WHERE category = 'director'
+ORDER BY tconst ASC;
+
+-- 9. SLICE DATA
+CREATE TABLE title_by_year
+AS
+(SELECT tconst, startYear, ave_rating 
+FROM imdb_megadata_2
+WHERE startYear > 1980
+AND ave_rating > 6
+AND num_votes > 1000);
+
+-- 10. COMBINE TITLES WITH HIGH RATINGS (1980s - 2020s)
+CREATE TABLE imega3
+AS
+(SELECT imeg.*, 
+ all_males_ratings,
+ all_males_v_counts,
+ all_females_ratings,
+ all_females_v_counts,
+ under_18_all_ratings,
+ under_18_all_v_counts,
+ under_18_males_ratings,
+ under_18_males_v_counts,
+ under_18_females_ratings,
+ under_18_females_v_counts,
+ f18_29_all_ratings,
+ f18_29_all_v_counts,
+ f18_29_males_ratings,
+ f18_29_males_v_counts,
+ f18_29_females_ratings,
+ f18_29_females_v_counts,
+ f30_44_all_ratings,
+ f30_44_all_v_counts,
+ f30_44_males_ratings,
+ f30_44_males_v_counts,
+ f30_44_females_ratings,
+ f30_44_females_v_counts,
+ f45_all_ratings,
+ f45_all_v_counts,
+ f45_males_ratings,
+ f45_males_v_counts,
+ f45_females_ratings,
+ f45_females_v_counts
+FROM title_80s_20s t82
+LEFT JOIN imdb_megadata_2 imeg
+ON t82.tconst = imeg.tconst);
+
+SELECT * FROM imega3;
+
+SELECT ISNULL (nominated , 0)
+FROM imega3;
+
+
     
 
 
