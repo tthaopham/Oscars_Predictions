@@ -19,6 +19,8 @@ SELECT
   nconst, SUBSTRING_INDEX(SUBSTRING_INDEX(knownForTitles, ',' , 4), ',', -1) knownForTitle FROM actor_name_clean
 );
 
+SELECT * FROM nconst_known_for;
+
 SELECT * FROM nconst_known_for WHERE nconst = 'nm0000002';
 -- NOTE: Substring index = get everything after the first instance (2), and keep last one (-1)
 
@@ -41,6 +43,8 @@ AS
 		FROM nconst_knownfor_rating) x
 	GROUP BY nconst);
 -- nconst_rating = average rating of the top 4 titles they are known for, weighted by number of votes
+
+SELECT * FROM nconst_ratings;
 
 -- 4. SCORE OF EACH TITLE BASED ON THE RATING OF THE MAIN CREW (NCONST_RATING)
 CREATE TABLE tconst_ratings_by_crew
@@ -66,7 +70,8 @@ UPDATE nconst_nominees_list_446 SET Nominees = 1; -- 446 names that had been nom
 UPDATE oscars_nominees_imdb_list SET Nominees = 1; -- 3470 titles that had been nominated
 UPDATE oscars_winner_imdb_list SET Winner = 1; -- 709 titles that had won
 
--- 6. CREATE TABLE THAT COUNTS THE CREW WHO ARE NOMINATED IN A TITLE (i.e. IF A TITLE HAS A STAR-STUDDED CAST)
+-- 6. CREATE TABLE THAT COUNTS THE CREW WHO ARE NOMINATED IN A TITLE 
+-- (i.e. IF A TITLE HAS A STAR-STUDDED CAST)
 CREATE TABLE tconst_with_nom_crew
 AS 
 (SELECT x.tconst, sum(x.nom_crew) as ct_nom_crew  -- count of nominated crew in a title
@@ -80,6 +85,7 @@ GROUP BY x.tconst);
 UPDATE tconst_with_nom_crew
 SET ct_nom_crew = 0
 WHERE ct_nom_crew IS NULL;
+
 SELECT * FROM tconst_with_nom_crew;
 
 -- 7. CREATE FINAL DATABASE:
@@ -99,7 +105,9 @@ AS
 	LEFT JOIN oscars_winner_imdb_list ow ON a.tconst = ow.tconst
 	LEFT JOIN oscars_nominees_imdb_list ond ON a.tconst = ond.tconst);
     
-    SELECT * FROM imdb_megadata_2;
+    SELECT * FROM imdb_megadata_2
+    WHERE tconst = "tt6710474";
+    
     SELECT * FROM all_titles;
     
 -- 8. CHECK DIRECTOR
@@ -157,6 +165,9 @@ SELECT * FROM imega3;
 
 SELECT ISNULL (nominated , 0)
 FROM imega3;
+
+SELECT COUNT(*) FROM imdb_megadata_2
+WHERE isAdult != 0; 
 
 
     
